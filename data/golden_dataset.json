@@ -1,0 +1,92 @@
+[
+  {
+    "id": "gd-001",
+    "email": "I was charged $49.99 twice this month for my Pro subscription. Please refund the duplicate charge, invoice INV-1123.",
+    "expected_category": "billing",
+    "expected_summary": "Customer was double-charged for their subscription and wants the duplicate refunded."
+  },
+  {
+    "id": "gd-002",
+    "email": "My credit card on file expired and I can't update my payment method, the form just spins forever.",
+    "expected_category": "billing",
+    "expected_summary": "Customer cannot update their expired payment method because the form doesn't submit."
+  },
+  {
+    "id": "gd-003",
+    "email": "Can you send me an itemized invoice for last quarter? I need it for our expense report.",
+    "expected_category": "billing",
+    "expected_summary": "Customer requests an itemized invoice for last quarter for expense reporting."
+  },
+  {
+    "id": "gd-004",
+    "email": "The export button on the reports page throws a 500 error every time I click it.",
+    "expected_category": "technical",
+    "expected_summary": "Customer reports the reports page export button throws a 500 error."
+  },
+  {
+    "id": "gd-005",
+    "email": "Our integration stopped receiving webhook events from your API around 2am UTC last night.",
+    "expected_category": "technical",
+    "expected_summary": "Customer's integration stopped receiving webhook events from the API overnight."
+  },
+  {
+    "id": "gd-006",
+    "email": "The mobile app crashes immediately on launch since the latest update on my Android phone.",
+    "expected_category": "technical",
+    "expected_summary": "Customer's mobile app crashes on launch after the latest update on Android."
+  },
+  {
+    "id": "gd-007",
+    "email": "I can't log in, it says my password is incorrect but I just reset it five minutes ago.",
+    "expected_category": "account",
+    "expected_summary": "Customer cannot log in despite recently resetting their password."
+  },
+  {
+    "id": "gd-008",
+    "email": "How do I enable two-factor authentication on my account? I don't see the option in settings.",
+    "expected_category": "account",
+    "expected_summary": "Customer wants to enable two-factor authentication but can't find the setting."
+  },
+  {
+    "id": "gd-009",
+    "email": "I need to change the email address associated with my account since I no longer have access to the old one.",
+    "expected_category": "account",
+    "expected_summary": "Customer wants to change their account email address."
+  },
+  {
+    "id": "gd-010",
+    "email": "Just wanted to say the new onboarding flow is way smoother than before, nice work!",
+    "expected_category": "general",
+    "expected_summary": "Customer compliments the improved onboarding flow."
+  },
+  {
+    "id": "gd-011",
+    "email": "Do you offer volume discounts for teams over 50 seats? We're evaluating a few vendors.",
+    "expected_category": "general",
+    "expected_summary": "Customer asks about volume discounts for a team over 50 seats."
+  },
+  {
+    "id": "gd-012",
+    "email": "What's your roadmap for the next few months? Curious if SSO is planned.",
+    "expected_category": "general",
+    "expected_summary": "Customer asks about the product roadmap and whether SSO is planned."
+  },
+  {
+    "id": "gd-013",
+    "email": "I was billed for the annual plan but I only signed up for monthly, and now I also can't log in to check my settings.",
+    "expected_category": "billing",
+    "expected_summary": "Customer was billed for the wrong plan and is also locked out of their account."
+  },
+  {
+    "id": "gd-014",
+    "email": "Getting a 'session expired' error every few minutes even though I just logged in.",
+    "expected_category": "account",
+    "expected_summary": "Customer's session keeps expiring shortly after logging in."
+  },
+  {
+    "id": "gd-015",
+    "email": "Not sure who to ask, but is there a way to export all my data before I close my account?",
+    "expected_category": "general",
+    "expected_summary": "Customer asks how to export their data before closing their account."
+  }
+]
