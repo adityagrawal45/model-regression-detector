@@ -1,0 +1,55 @@
+import json
+from pathlib import Path
+
+from regression_detector.eval_runner import run_eval
+from regression_detector.llm_client import MockClient
+
+FIXTURE_DATASET = [
+    {
+        "id": "t-001",
+        "email": "I was charged twice for my subscription, please issue a refund.",
+        "expected_category": "billing",
+        "expected_summary": "Customer was double-charged and wants a refund.",
+    },
+    {
+        "id": "t-002",
+        "email": "I can't log in, my password reset link isn't working.",
+        "expected_category": "account",
+        "expected_summary": "Customer cannot log in and their password reset link fails.",
+    },
+    {
+        "id": "t-003",
+        "email": "The checkout page throws a 500 error every time I submit an order.",
+        "expected_category": "technical",
+        "expected_summary": "Customer reports a 500 error on the checkout page.",
+    },
+]
+
+
+def test_run_eval_end_to_end(tmp_path: Path):
+    dataset_path = tmp_path / "dataset.json"
+    dataset_path.write_text(json.dumps(FIXTURE_DATASET), encoding="utf-8")
+
+    prompt_path = Path(__file__).resolve().parents[1] / "prompts" / "classifier_v1.yaml"
+
+    report = run_eval(prompt_path, dataset_path, MockClient())
+
+    assert report.total == 3
+    assert 0.0 <= report.category_accuracy <= 1.0
+    assert len(report.results) == 3
+    # MockClient's keyword matching should get all three of these unambiguous examples right.
+    assert report.category_accuracy == 1.0
+    for result in report.results:
+        assert result.error is None
+        assert 0.0 <= result.summary_score <= 1.0
+
+
+def test_run_eval_scoring_math(tmp_path: Path):
+    dataset_path = tmp_path / "dataset.json"
+    dataset_path.write_text(json.dumps(FIXTURE_DATASET), encoding="utf-8")
+    prompt_path = Path(__file__).resolve().parents[1] / "prompts" / "classifier_v1.yaml"
+
+    report = run_eval(prompt_path, dataset_path, MockClient())
+
+    expected_accuracy = sum(r.category_match for r in report.results) / report.total
+    assert report.category_accuracy == round(expected_accuracy, 3)
