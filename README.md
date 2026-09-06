@@ -11,8 +11,17 @@ users.
 - **A typed contract**: `PromptConfig` (input) and `ClassificationResult`
   (output), both Pydantic models, in
   [src/regression_detector/config.py](src/regression_detector/config.py).
-- **A golden dataset**: 15 hand-labeled example emails in
-  [data/golden_dataset.json](data/golden_dataset.json).
+- **A golden dataset**: 60 hand-written, human-verified test cases (never
+  LLM-generated) in [data/golden_dataset.json](data/golden_dataset.json),
+  loaded via a typed `GoldenDataset`/`GoldenExample` contract in
+  [src/regression_detector/dataset.py](src/regression_detector/dataset.py).
+  Each case has a stable id, an `expected_difficulty` (`easy`/`medium`/`hard`),
+  and a `notes` field explaining why it's in the dataset. It deliberately
+  includes ambiguous emails that straddle two categories, one- or two-word
+  emails, typo-heavy emails, sarcastic emails, and mixed-language emails, on
+  top of the straightforward cases. The dataset file itself is versioned
+  (`version` field) separately from prompt versions, so growing or relabeling
+  the eval bar is a visible, trackable change.
 - **An eval runner**: runs the classifier over the golden dataset and scores
   category accuracy + a rough summary-quality heuristic, in
   [src/regression_detector/eval_runner.py](src/regression_detector/eval_runner.py).
@@ -53,9 +62,16 @@ Without a key (offline / demo mode, uses `MockClient` automatically):
 python -m regression_detector.eval_runner --mock
 ```
 
-This prints a pass/fail table per example, aggregate category accuracy, and
-an average summary-quality score, then writes a full JSON report to
+This prints a pass/fail table per example, aggregate category accuracy, an
+average summary-quality score, and an accuracy-by-difficulty breakdown
+(`easy`/`medium`/`hard`), then writes a full JSON report to
 `reports/eval_<version>_<timestamp>.json`.
+
+Note: `MockClient`'s keyword matching is a thin offline stand-in, not a real
+classifier — it won't ace the harder (ambiguous/sarcastic/mixed-language)
+cases in the golden dataset, and that's expected. Those cases exist to
+stress a *real* model; a real Groq run is expected to score meaningfully
+higher on them than `MockClient` does.
 
 ## Running tests
 
