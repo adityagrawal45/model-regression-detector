@@ -12,7 +12,6 @@ whole pipeline stays demoable offline.
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import sys
 from datetime import datetime, timezone
@@ -21,6 +20,7 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 
 from regression_detector.classifier import classify_email
+from regression_detector.dataset import load_golden_dataset
 from regression_detector.llm_client import GroqClient, LLMClient, MockClient
 from regression_detector.prompts import load_prompt_config
 
@@ -36,16 +36,19 @@ class ExampleResult(BaseModel):
     expected_summary: str
     actual_summary: str | None
     summary_score: float  # 0..1 rough keyword-overlap heuristic
+    difficulty: str | None = None
     error: str | None = None
 
 
 class EvalReport(BaseModel):
     prompt_version: str
     model: str
+    dataset_version: str | None = None
     ran_at: datetime
     total: int
     category_accuracy: float
     avg_summary_score: float
+    accuracy_by_difficulty: dict[str, float] = Field(default_factory=dict)
     results: list[ExampleResult] = Field(default_factory=list)
 
 
@@ -70,37 +73,50 @@ def _summary_score(actual: str | None, expected: str) -> float:
     return round(len(overlap) / len(expected_words), 3)
 
 
+def _accuracy_by_difficulty(results: list[ExampleResult]) -> dict[str, float]:
+    by_difficulty: dict[str, list[ExampleResult]] = {}
+    for r in results:
+        if r.difficulty is not None:
+            by_difficulty.setdefault(r.difficulty, []).append(r)
+    return {
+        difficulty: round(sum(r.category_match for r in group) / len(group), 3)
+        for difficulty, group in sorted(by_difficulty.items())
+    }
+
+
 def run_eval(prompt_path: str | Path, dataset_path: str | Path, client: LLMClient) -> EvalReport:
     prompt_config = load_prompt_config(prompt_path)
-    dataset = json.loads(Path(dataset_path).read_text(encoding="utf-8"))
+    dataset = load_golden_dataset(dataset_path)
 
     results: list[ExampleResult] = []
-    for example in dataset:
+    for example in dataset.cases:
         try:
-            result = classify_email(example["email"], prompt_config, client)
+            result = classify_email(example.email, prompt_config, client)
             results.append(
                 ExampleResult(
-                    id=example["id"],
-                    email=example["email"],
-                    expected_category=example["expected_category"],
+                    id=example.id,
+                    email=example.email,
+                    expected_category=example.expected_category,
                     actual_category=result.category,
-                    category_match=result.category == example["expected_category"],
-                    expected_summary=example["expected_summary"],
+                    category_match=result.category == example.expected_category,
+                    expected_summary=example.expected_summary,
                     actual_summary=result.summary,
-                    summary_score=_summary_score(result.summary, example["expected_summary"]),
+                    summary_score=_summary_score(result.summary, example.expected_summary),
+                    difficulty=example.expected_difficulty,
                 )
             )
         except Exception as exc:  # noqa: BLE001 - record and continue so one bad example doesn't abort the run
             results.append(
                 ExampleResult(
-                    id=example["id"],
-                    email=example["email"],
-                    expected_category=example["expected_category"],
+                    id=example.id,
+                    email=example.email,
+                    expected_category=example.expected_category,
                     actual_category=None,
                     category_match=False,
-                    expected_summary=example["expected_summary"],
+                    expected_summary=example.expected_summary,
                     actual_summary=None,
                     summary_score=0.0,
+                    difficulty=example.expected_difficulty,
                     error=str(exc),
                 )
             )
@@ -112,16 +128,20 @@ def run_eval(prompt_path: str | Path, dataset_path: str | Path, client: LLMClien
     return EvalReport(
         prompt_version=prompt_config.version,
         model=prompt_config.model,
+        dataset_version=dataset.version,
         ran_at=datetime.now(timezone.utc),
         total=total,
         category_accuracy=category_accuracy,
         avg_summary_score=avg_summary_score,
+        accuracy_by_difficulty=_accuracy_by_difficulty(results),
         results=results,
     )
 
 
 def _print_summary(report: EvalReport) -> None:
     print(f"\nPrompt version: {report.prompt_version}  Model: {report.model}")
+    if report.dataset_version:
+        print(f"Dataset version: {report.dataset_version}")
     print(f"Ran at: {report.ran_at.isoformat()}")
     print(f"{'ID':<10}{'Expected':<12}{'Actual':<12}{'Match':<8}{'Summary':<8}")
     for r in report.results:
@@ -131,6 +151,12 @@ def _print_summary(report: EvalReport) -> None:
     print(f"\nCategory accuracy: {report.category_accuracy * 100:.1f}%  "
           f"({sum(r.category_match for r in report.results)}/{report.total})")
     print(f"Avg summary score: {report.avg_summary_score}")
+
+    if report.accuracy_by_difficulty:
+        breakdown = "  ".join(
+            f"{difficulty}={acc * 100:.0f}%" for difficulty, acc in report.accuracy_by_difficulty.items()
+        )
+        print(f"Accuracy by difficulty: {breakdown}")
 
     failures = [r for r in report.results if not r.category_match]
     if failures:
