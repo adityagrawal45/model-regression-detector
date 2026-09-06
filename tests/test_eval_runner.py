@@ -4,26 +4,36 @@ from pathlib import Path
 from regression_detector.eval_runner import run_eval
 from regression_detector.llm_client import MockClient
 
-FIXTURE_DATASET = [
-    {
-        "id": "t-001",
-        "email": "I was charged twice for my subscription, please issue a refund.",
-        "expected_category": "billing",
-        "expected_summary": "Customer was double-charged and wants a refund.",
-    },
-    {
-        "id": "t-002",
-        "email": "I can't log in, my password reset link isn't working.",
-        "expected_category": "account",
-        "expected_summary": "Customer cannot log in and their password reset link fails.",
-    },
-    {
-        "id": "t-003",
-        "email": "The checkout page throws a 500 error every time I submit an order.",
-        "expected_category": "technical",
-        "expected_summary": "Customer reports a 500 error on the checkout page.",
-    },
-]
+FIXTURE_DATASET = {
+    "version": "test-fixture",
+    "created_at": "2026-01-01T00:00:00Z",
+    "cases": [
+        {
+            "id": "t-001",
+            "email": "I was charged twice for my subscription, please issue a refund.",
+            "expected_category": "billing",
+            "expected_summary": "Customer was double-charged and wants a refund.",
+            "expected_difficulty": "easy",
+            "notes": "Fixture case for eval runner tests.",
+        },
+        {
+            "id": "t-002",
+            "email": "I can't log in, my password reset link isn't working.",
+            "expected_category": "account",
+            "expected_summary": "Customer cannot log in and their password reset link fails.",
+            "expected_difficulty": "easy",
+            "notes": "Fixture case for eval runner tests.",
+        },
+        {
+            "id": "t-003",
+            "email": "The checkout page throws a 500 error every time I submit an order.",
+            "expected_category": "technical",
+            "expected_summary": "Customer reports a 500 error on the checkout page.",
+            "expected_difficulty": "medium",
+            "notes": "Fixture case for eval runner tests.",
+        },
+    ],
+}
 
 
 def test_run_eval_end_to_end(tmp_path: Path):
@@ -37,11 +47,14 @@ def test_run_eval_end_to_end(tmp_path: Path):
     assert report.total == 3
     assert 0.0 <= report.category_accuracy <= 1.0
     assert len(report.results) == 3
+    assert report.dataset_version == "test-fixture"
     # MockClient's keyword matching should get all three of these unambiguous examples right.
     assert report.category_accuracy == 1.0
+    assert report.accuracy_by_difficulty == {"easy": 1.0, "medium": 1.0}
     for result in report.results:
         assert result.error is None
         assert 0.0 <= result.summary_score <= 1.0
+        assert result.difficulty in {"easy", "medium", "hard"}
 
 
 def test_run_eval_scoring_math(tmp_path: Path):
