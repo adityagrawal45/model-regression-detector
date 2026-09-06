@@ -1,92 +1,486 @@
-[
-  {
-    "id": "gd-001",
-    "email": "I was charged $49.99 twice this month for my Pro subscription. Please refund the duplicate charge, invoice INV-1123.",
-    "expected_category": "billing",
-    "expected_summary": "Customer was double-charged for their subscription and wants the duplicate refunded."
-  },
-  {
-    "id": "gd-002",
-    "email": "My credit card on file expired and I can't update my payment method, the form just spins forever.",
-    "expected_category": "billing",
-    "expected_summary": "Customer cannot update their expired payment method because the form doesn't submit."
-  },
-  {
-    "id": "gd-003",
-    "email": "Can you send me an itemized invoice for last quarter? I need it for our expense report.",
-    "expected_category": "billing",
-    "expected_summary": "Customer requests an itemized invoice for last quarter for expense reporting."
-  },
-  {
-    "id": "gd-004",
-    "email": "The export button on the reports page throws a 500 error every time I click it.",
-    "expected_category": "technical",
-    "expected_summary": "Customer reports the reports page export button throws a 500 error."
-  },
-  {
-    "id": "gd-005",
-    "email": "Our integration stopped receiving webhook events from your API around 2am UTC last night.",
-    "expected_category": "technical",
-    "expected_summary": "Customer's integration stopped receiving webhook events from the API overnight."
-  },
-  {
-    "id": "gd-006",
-    "email": "The mobile app crashes immediately on launch since the latest update on my Android phone.",
-    "expected_category": "technical",
-    "expected_summary": "Customer's mobile app crashes on launch after the latest update on Android."
-  },
-  {
-    "id": "gd-007",
-    "email": "I can't log in, it says my password is incorrect but I just reset it five minutes ago.",
-    "expected_category": "account",
-    "expected_summary": "Customer cannot log in despite recently resetting their password."
-  },
-  {
-    "id": "gd-008",
-    "email": "How do I enable two-factor authentication on my account? I don't see the option in settings.",
-    "expected_category": "account",
-    "expected_summary": "Customer wants to enable two-factor authentication but can't find the setting."
-  },
-  {
-    "id": "gd-009",
-    "email": "I need to change the email address associated with my account since I no longer have access to the old one.",
-    "expected_category": "account",
-    "expected_summary": "Customer wants to change their account email address."
-  },
-  {
-    "id": "gd-010",
-    "email": "Just wanted to say the new onboarding flow is way smoother than before, nice work!",
-    "expected_category": "general",
-    "expected_summary": "Customer compliments the improved onboarding flow."
-  },
-  {
-    "id": "gd-011",
-    "email": "Do you offer volume discounts for teams over 50 seats? We're evaluating a few vendors.",
-    "expected_category": "general",
-    "expected_summary": "Customer asks about volume discounts for a team over 50 seats."
-  },
-  {
-    "id": "gd-012",
-    "email": "What's your roadmap for the next few months? Curious if SSO is planned.",
-    "expected_category": "general",
-    "expected_summary": "Customer asks about the product roadmap and whether SSO is planned."
-  },
-  {
-    "id": "gd-013",
-    "email": "I was billed for the annual plan but I only signed up for monthly, and now I also can't log in to check my settings.",
-    "expected_category": "billing",
-    "expected_summary": "Customer was billed for the wrong plan and is also locked out of their account."
-  },
-  {
-    "id": "gd-014",
-    "email": "Getting a 'session expired' error every few minutes even though I just logged in.",
-    "expected_category": "account",
-    "expected_summary": "Customer's session keeps expiring shortly after logging in."
-  },
-  {
-    "id": "gd-015",
-    "email": "Not sure who to ask, but is there a way to export all my data before I close my account?",
-    "expected_category": "general",
-    "expected_summary": "Customer asks how to export their data before closing their account."
-  }
-]
+{
+  "version": "v2",
+  "created_at": "2026-09-07T00:00:00Z",
+  "cases": [
+    {
+      "id": "gd-001",
+      "email": "I was charged $49.99 twice this month for my Pro subscription. Please refund the duplicate charge, invoice INV-1123.",
+      "expected_category": "billing",
+      "expected_summary": "Customer was double-charged for their subscription and wants the duplicate refunded.",
+      "expected_difficulty": "easy",
+      "notes": "Unambiguous double-charge refund request with an invoice number. Baseline easy billing case."
+    },
+    {
+      "id": "gd-002",
+      "email": "My credit card on file expired and I can't update my payment method, the form just spins forever.",
+      "expected_category": "billing",
+      "expected_summary": "Customer cannot update their expired payment method because the form doesn't submit.",
+      "expected_difficulty": "medium",
+      "notes": "Mentions a broken form (technical symptom) but the underlying request is a payment-method update, so billing is the right call over technical."
+    },
+    {
+      "id": "gd-003",
+      "email": "Can you send me an itemized invoice for last quarter? I need it for our expense report.",
+      "expected_category": "billing",
+      "expected_summary": "Customer requests an itemized invoice for last quarter for expense reporting.",
+      "expected_difficulty": "easy",
+      "notes": "Clean invoice request, no edge-case elements."
+    },
+    {
+      "id": "gd-004",
+      "email": "I was billed for the annual plan but I only signed up for monthly, and now I also can't log in to check my settings.",
+      "expected_category": "billing",
+      "expected_summary": "Customer was billed for the wrong plan and is also locked out of their account.",
+      "expected_difficulty": "hard",
+      "notes": "Two distinct issues (wrong billing plan + login lockout). Billing is the primary complaint the customer leads with; a real triage system has to pick one category."
+    },
+    {
+      "id": "gd-005",
+      "email": "I want to downgrade from the Team plan to the Starter plan starting next billing cycle.",
+      "expected_category": "billing",
+      "expected_summary": "Customer wants to downgrade their plan starting next billing cycle.",
+      "expected_difficulty": "easy",
+      "notes": "Plain plan-change request."
+    },
+    {
+      "id": "gd-006",
+      "email": "I just got a chargeback notice from my bank for a payment I actually authorized. Can you help me sort this out?",
+      "expected_category": "billing",
+      "expected_summary": "Customer received a chargeback notice for a payment they say was authorized and wants it resolved.",
+      "expected_difficulty": "medium",
+      "notes": "Chargeback/dispute vocabulary is less common than 'refund' or 'charged' but is still clearly billing."
+    },
+    {
+      "id": "gd-007",
+      "email": "I want to cancel my subscription, it's just too expensive for what I'm using it for.",
+      "expected_category": "billing",
+      "expected_summary": "Customer wants to cancel their subscription due to cost.",
+      "expected_difficulty": "easy",
+      "notes": "Straightforward cancellation-for-price request."
+    },
+    {
+      "id": "gd-008",
+      "email": "If I upgrade to the Pro plan in the middle of my billing cycle, will I be charged the full price or a prorated amount?",
+      "expected_category": "billing",
+      "expected_summary": "Customer asks whether a mid-cycle upgrade will be charged in full or prorated.",
+      "expected_difficulty": "medium",
+      "notes": "A pricing/policy question rather than a problem report - tests that the classifier doesn't require something to be 'broken' to call it billing."
+    },
+    {
+      "id": "gd-009",
+      "email": "i think i was over charge for teh anual plan can u chek my last invoic pls",
+      "expected_category": "billing",
+      "expected_summary": "Customer believes they were overcharged for the annual plan and wants their invoice checked.",
+      "expected_difficulty": "medium",
+      "notes": "Heavy typos ('teh', 'anual', 'chek', 'invoic') - tests robustness to misspellings on an otherwise clear billing request."
+    },
+    {
+      "id": "gd-010",
+      "email": "Refund??",
+      "expected_category": "billing",
+      "expected_summary": "Customer is asking about a refund with no further detail.",
+      "expected_difficulty": "hard",
+      "notes": "Extremely short, no context at all. Only signal is the single word 'Refund' - realistic worst-case input."
+    },
+    {
+      "id": "gd-011",
+      "email": "Oh great, charged AGAIN for a plan I already cancelled last month. Love it. Really great system you've got here.",
+      "expected_category": "billing",
+      "expected_summary": "Customer was charged again for a plan they say they already cancelled.",
+      "expected_difficulty": "hard",
+      "notes": "Sarcastic tone ('Love it', 'Really great system') - the real complaint (unwanted charge after cancellation) needs to be extracted past the sarcasm."
+    },
+    {
+      "id": "gd-012",
+      "email": "Hola, me cobraron dos veces (charged twice) este mes, please help con el refund, gracias.",
+      "expected_category": "billing",
+      "expected_summary": "Customer was charged twice this month and is asking for a refund.",
+      "expected_difficulty": "hard",
+      "notes": "Mixed Spanish/English (code-switching). The English words ('charged twice', 'refund') carry the signal but a brittle keyword match tuned to English phrasing could miss the Spanish framing."
+    },
+    {
+      "id": "gd-013",
+      "email": "Could you email me a receipt for my last payment? I need it for tax filing purposes.",
+      "expected_category": "billing",
+      "expected_summary": "Customer requests a receipt for their last payment for tax purposes.",
+      "expected_difficulty": "easy",
+      "notes": "Simple receipt request."
+    },
+    {
+      "id": "gd-014",
+      "email": "I'm being charged an extra 3% on every payment that I think is a currency conversion fee, is that expected?",
+      "expected_category": "billing",
+      "expected_summary": "Customer questions an unexpected currency conversion fee on their payments.",
+      "expected_difficulty": "medium",
+      "notes": "Less common billing vocabulary (currency conversion fee) than 'refund' or 'invoice'."
+    },
+    {
+      "id": "gd-015",
+      "email": "Can I switch my payment method from credit card to PayPal for future charges?",
+      "expected_category": "billing",
+      "expected_summary": "Customer wants to switch their payment method to PayPal.",
+      "expected_difficulty": "easy",
+      "notes": "Plain payment-method-change request."
+    },
+    {
+      "id": "gd-016",
+      "email": "The export button on the reports page throws a 500 error every time I click it.",
+      "expected_category": "technical",
+      "expected_summary": "Customer reports the reports page export button throws a 500 error.",
+      "expected_difficulty": "easy",
+      "notes": "Unambiguous bug report with an explicit error code."
+    },
+    {
+      "id": "gd-017",
+      "email": "Our integration stopped receiving webhook events from your API around 2am UTC last night.",
+      "expected_category": "technical",
+      "expected_summary": "Customer's integration stopped receiving webhook events from the API overnight.",
+      "expected_difficulty": "medium",
+      "notes": "Developer-facing integration language rather than consumer bug language."
+    },
+    {
+      "id": "gd-018",
+      "email": "The mobile app crashes immediately on launch since the latest update on my Android phone.",
+      "expected_category": "technical",
+      "expected_summary": "Customer's mobile app crashes on launch after the latest update on Android.",
+      "expected_difficulty": "easy",
+      "notes": "Clear crash report tied to a specific update and platform."
+    },
+    {
+      "id": "gd-019",
+      "email": "We're suddenly hitting rate limit errors on the /v1/orders endpoint even though our request volume hasn't changed.",
+      "expected_category": "technical",
+      "expected_summary": "Customer is unexpectedly hitting rate limit errors on the orders API endpoint.",
+      "expected_difficulty": "medium",
+      "notes": "API/rate-limit specific technical issue."
+    },
+    {
+      "id": "gd-020",
+      "email": "The charts on my dashboard just show a spinner forever and never load any data.",
+      "expected_category": "technical",
+      "expected_summary": "Customer's dashboard charts never finish loading and just spin.",
+      "expected_difficulty": "easy",
+      "notes": "Common 'stuck loading' bug report."
+    },
+    {
+      "id": "gd-021",
+      "email": "Every CSV I export has garbled characters instead of accented letters, the encoding seems wrong.",
+      "expected_category": "technical",
+      "expected_summary": "Customer's CSV exports have garbled characters due to an apparent encoding issue.",
+      "expected_difficulty": "medium",
+      "notes": "Specific, less common bug type (character encoding) that still clearly belongs in technical."
+    },
+    {
+      "id": "gd-022",
+      "email": "Dark mode turns off every time I refresh the page, it doesn't seem to save my preference.",
+      "expected_category": "technical",
+      "expected_summary": "Customer's dark mode preference doesn't persist across page refreshes.",
+      "expected_difficulty": "easy",
+      "notes": "Minor cosmetic bug, still unambiguously technical."
+    },
+    {
+      "id": "gd-023",
+      "email": "It's broken.",
+      "expected_category": "technical",
+      "expected_summary": "Customer says something is broken with no further detail.",
+      "expected_difficulty": "hard",
+      "notes": "Extremely short and vague - no product area named at all. Tests graceful handling of near-zero-information input."
+    },
+    {
+      "id": "gd-024",
+      "email": "teh api keeps timeing out wen i try to uplaod files bigger then 10mb",
+      "expected_category": "technical",
+      "expected_summary": "Customer's API requests time out when uploading files larger than 10MB.",
+      "expected_difficulty": "medium",
+      "notes": "Heavy typos on an otherwise clear technical/API report."
+    },
+    {
+      "id": "gd-025",
+      "email": "Since the last update I can't access any of my saved reports anymore, they just don't show up.",
+      "expected_category": "technical",
+      "expected_summary": "Customer can no longer access their saved reports after the latest update.",
+      "expected_difficulty": "hard",
+      "notes": "Could read as an account/access issue, but 'since the last update' points to a software regression rather than an account permissions problem."
+    },
+    {
+      "id": "gd-026",
+      "email": "Cool, your '99.9% uptime' API has been down for 3 hours straight this morning. Impressive.",
+      "expected_category": "technical",
+      "expected_summary": "Customer reports the API has been down for three hours despite the advertised uptime.",
+      "expected_difficulty": "medium",
+      "notes": "Sarcastic framing ('Impressive', quoting the uptime claim) around a clear outage report."
+    },
+    {
+      "id": "gd-027",
+      "email": "Bonjour, l'application crash (it crashes) every time I open the settings page, please fix.",
+      "expected_category": "technical",
+      "expected_summary": "Customer's application crashes every time they open the settings page.",
+      "expected_difficulty": "hard",
+      "notes": "Mixed French/English. 'crash' is a cognate in both languages, but the surrounding sentence structure is French."
+    },
+    {
+      "id": "gd-028",
+      "email": "A browser extension I have installed seems to break your UI, buttons overlap and menus don't open.",
+      "expected_category": "technical",
+      "expected_summary": "Customer's browser extension appears to be breaking the product's UI layout.",
+      "expected_difficulty": "medium",
+      "notes": "Third-party-caused bug, still a technical/UI report."
+    },
+    {
+      "id": "gd-029",
+      "email": "After rotating our API key, webhook signature verification started failing on every incoming event.",
+      "expected_category": "technical",
+      "expected_summary": "Customer's webhook signature verification fails on every event after rotating their API key.",
+      "expected_difficulty": "hard",
+      "notes": "Dense developer/security terminology (signature verification, key rotation) - realistic for a technical support queue but harder to parse than a plain bug report."
+    },
+    {
+      "id": "gd-030",
+      "email": "Every page on the site has been loading really slowly for the past two days.",
+      "expected_category": "technical",
+      "expected_summary": "Customer reports slow page load times across the entire site for two days.",
+      "expected_difficulty": "easy",
+      "notes": "Straightforward performance complaint."
+    },
+    {
+      "id": "gd-031",
+      "email": "I can't log in, it says my password is incorrect but I just reset it five minutes ago.",
+      "expected_category": "account",
+      "expected_summary": "Customer cannot log in despite recently resetting their password.",
+      "expected_difficulty": "easy",
+      "notes": "Classic login/password issue."
+    },
+    {
+      "id": "gd-032",
+      "email": "How do I enable two-factor authentication on my account? I don't see the option in settings.",
+      "expected_category": "account",
+      "expected_summary": "Customer wants to enable two-factor authentication but can't find the setting.",
+      "expected_difficulty": "easy",
+      "notes": "Plain account-settings question."
+    },
+    {
+      "id": "gd-033",
+      "email": "I need to change the email address associated with my account since I no longer have access to the old one.",
+      "expected_category": "account",
+      "expected_summary": "Customer wants to change their account email address.",
+      "expected_difficulty": "easy",
+      "notes": "Standard account-detail change request."
+    },
+    {
+      "id": "gd-034",
+      "email": "Getting a 'session expired' error every few minutes even though I just logged in.",
+      "expected_category": "account",
+      "expected_summary": "Customer's session keeps expiring shortly after logging in.",
+      "expected_difficulty": "medium",
+      "notes": "Could be read as a technical/session bug, but it directly affects login/access so account is the better fit; borderline with technical."
+    },
+    {
+      "id": "gd-035",
+      "email": "I got locked out after too many failed login attempts, how do I get back in?",
+      "expected_category": "account",
+      "expected_summary": "Customer is locked out after too many failed login attempts and wants to regain access.",
+      "expected_difficulty": "easy",
+      "notes": "Plain lockout request."
+    },
+    {
+      "id": "gd-036",
+      "email": "I accidentally created two accounts with different emails, can you merge them into one?",
+      "expected_category": "account",
+      "expected_summary": "Customer wants their two duplicate accounts merged into one.",
+      "expected_difficulty": "medium",
+      "notes": "Less common account-management request (merging accounts)."
+    },
+    {
+      "id": "gd-037",
+      "email": "I'm trying to verify my identity to finish signup but the verification email never arrives, even after resending.",
+      "expected_category": "account",
+      "expected_summary": "Customer's identity verification email never arrives, blocking signup.",
+      "expected_difficulty": "medium",
+      "notes": "Email-delivery symptom could look technical, but the underlying request is about completing account verification/signup."
+    },
+    {
+      "id": "gd-038",
+      "email": "Locked out.",
+      "expected_category": "account",
+      "expected_summary": "Customer says they are locked out with no further detail.",
+      "expected_difficulty": "hard",
+      "notes": "Extremely short with almost no context, similar in spirit to gd-023 but for account access."
+    },
+    {
+      "id": "gd-039",
+      "email": "cant reset my paswrod the link keeps expireing before i click it",
+      "expected_category": "account",
+      "expected_summary": "Customer's password reset link keeps expiring before they can use it.",
+      "expected_difficulty": "medium",
+      "notes": "Heavy typos ('paswrod', 'expireing') on an otherwise clear password-reset issue."
+    },
+    {
+      "id": "gd-040",
+      "email": "I want to permanently delete my account and all my data, please confirm once it's done.",
+      "expected_category": "account",
+      "expected_summary": "Customer requests permanent deletion of their account and data.",
+      "expected_difficulty": "medium",
+      "notes": "Account deletion / data-erasure (GDPR-style) request - a distinct and consequential account-management flow."
+    },
+    {
+      "id": "gd-041",
+      "email": "Wow, 'account security' locked ME out for logging in from a new phone. Fantastic system you've built.",
+      "expected_category": "account",
+      "expected_summary": "Customer was locked out of their account for logging in from a new device.",
+      "expected_difficulty": "medium",
+      "notes": "Sarcastic tone around a clear account-lockout issue caused by a security check."
+    },
+    {
+      "id": "gd-042",
+      "email": "Hallo, ich kann mich nicht einloggen (I can't log in), meine Email wird nicht erkannt, please help.",
+      "expected_category": "account",
+      "expected_summary": "Customer cannot log in because their email isn't being recognized.",
+      "expected_difficulty": "hard",
+      "notes": "Mixed German/English. Requires reading the German clause to get the full picture (email not recognized) rather than just the English aside."
+    },
+    {
+      "id": "gd-043",
+      "email": "My profile picture upload keeps failing and reverting to the default image, is this a known issue?",
+      "expected_category": "account",
+      "expected_summary": "Customer's profile picture upload fails and reverts to the default image.",
+      "expected_difficulty": "medium",
+      "notes": "Could plausibly be filed as technical (an upload bug), but it's specifically about the account profile, so account is the intended label; documents a real category boundary."
+    },
+    {
+      "id": "gd-044",
+      "email": "I'm leaving the company, can you transfer ownership of this account to my colleague's email instead?",
+      "expected_category": "account",
+      "expected_summary": "Customer wants to transfer account ownership to a colleague before leaving.",
+      "expected_difficulty": "hard",
+      "notes": "Multi-step, less common account-management request (ownership transfer)."
+    },
+    {
+      "id": "gd-045",
+      "email": "I got an alert about a login from an unfamiliar device in another country, was that really me or should I be worried?",
+      "expected_category": "account",
+      "expected_summary": "Customer wants to confirm whether a login alert from an unfamiliar device and location was legitimate.",
+      "expected_difficulty": "medium",
+      "notes": "Security-alert-driven account question, no explicit error message to key off of."
+    },
+    {
+      "id": "gd-046",
+      "email": "Just wanted to say the new onboarding flow is way smoother than before, nice work!",
+      "expected_category": "general",
+      "expected_summary": "Customer compliments the improved onboarding flow.",
+      "expected_difficulty": "easy",
+      "notes": "Pure positive feedback, no request at all."
+    },
+    {
+      "id": "gd-047",
+      "email": "Do you offer volume discounts for teams over 50 seats? We're evaluating a few vendors.",
+      "expected_category": "general",
+      "expected_summary": "Customer asks about volume discounts for a team over 50 seats.",
+      "expected_difficulty": "easy",
+      "notes": "Pre-sales pricing question, distinct from a billing dispute about an existing charge."
+    },
+    {
+      "id": "gd-048",
+      "email": "What's your roadmap for the next few months? Curious if SSO is planned.",
+      "expected_category": "general",
+      "expected_summary": "Customer asks about the product roadmap and whether SSO is planned.",
+      "expected_difficulty": "easy",
+      "notes": "Forward-looking product question, not a support issue."
+    },
+    {
+      "id": "gd-049",
+      "email": "Not sure who to ask, but is there a way to export all my data before I close my account?",
+      "expected_category": "general",
+      "expected_summary": "Customer asks how to export their data before closing their account.",
+      "expected_difficulty": "medium",
+      "notes": "Overlaps with account (mentions closing the account), but the customer explicitly frames it as an open-ended 'not sure who to ask' question, so general is the intended label."
+    },
+    {
+      "id": "gd-050",
+      "email": "Could you point me to your data privacy and retention policy? Our legal team is asking.",
+      "expected_category": "general",
+      "expected_summary": "Customer asks for the company's data privacy and retention policy.",
+      "expected_difficulty": "easy",
+      "notes": "Policy/documentation request, not tied to a specific account problem."
+    },
+    {
+      "id": "gd-051",
+      "email": "Is it possible to schedule a live demo of the enterprise features with someone on your team?",
+      "expected_category": "general",
+      "expected_summary": "Customer wants to schedule a demo of the enterprise features.",
+      "expected_difficulty": "easy",
+      "notes": "Sales/demo request."
+    },
+    {
+      "id": "gd-052",
+      "email": "Hi, I saw your job posting for a support engineer, is it still open? Attaching my resume.",
+      "expected_category": "general",
+      "expected_summary": "Sender asks about a job posting and attaches their resume.",
+      "expected_difficulty": "medium",
+      "notes": "Not a customer issue at all - a misdirected job application. Tests that the classifier doesn't force everything into the three support categories."
+    },
+    {
+      "id": "gd-053",
+      "email": "Feature idea: it would be great if we could bulk-tag multiple records at once instead of one at a time.",
+      "expected_category": "general",
+      "expected_summary": "Customer suggests adding bulk-tagging for multiple records.",
+      "expected_difficulty": "easy",
+      "notes": "Feature request / product feedback."
+    },
+    {
+      "id": "gd-054",
+      "email": "Hi",
+      "expected_category": "general",
+      "expected_summary": "Customer sent a greeting with no actual request or issue.",
+      "expected_difficulty": "hard",
+      "notes": "No actionable content whatsoever - the minimal-information floor case for the whole dataset."
+    },
+    {
+      "id": "gd-055",
+      "email": "hey wat time zone is ur suport team in, tryin to figure out wen to call",
+      "expected_category": "general",
+      "expected_summary": "Customer asks what time zone the support team is in.",
+      "expected_difficulty": "medium",
+      "notes": "Heavy typos on a simple logistics question with no billing/technical/account content."
+    },
+    {
+      "id": "gd-056",
+      "email": "Sure, 'contact us anytime' but nobody ever replies for days. Cool policy you've got.",
+      "expected_category": "general",
+      "expected_summary": "Customer complains sarcastically about slow response times from support.",
+      "expected_difficulty": "hard",
+      "notes": "Sarcastic complaint about support responsiveness itself rather than any product issue - doesn't map to billing/technical/account at all."
+    },
+    {
+      "id": "gd-057",
+      "email": "Hola team, just curious cuando you'll add Spanish language support to the app?",
+      "expected_category": "general",
+      "expected_summary": "Customer asks when Spanish language support will be added to the app.",
+      "expected_difficulty": "medium",
+      "notes": "Mixed Spanish/English feature request, not tied to an existing account or bug."
+    },
+    {
+      "id": "gd-058",
+      "email": "Do you have a referral program? I'd love to recommend this to other teams I work with.",
+      "expected_category": "general",
+      "expected_summary": "Customer asks whether there is a referral program.",
+      "expected_difficulty": "easy",
+      "notes": "Simple program/policy question."
+    },
+    {
+      "id": "gd-059",
+      "email": "Please stop sending me marketing emails, I only want product/security notifications.",
+      "expected_category": "general",
+      "expected_summary": "Customer wants to stop receiving marketing emails but keep product/security ones.",
+      "expected_difficulty": "medium",
+      "notes": "Borders on account (a notification-preferences setting) but is framed as a general communication request rather than an account-access issue."
+    },
+    {
+      "id": "gd-060",
+      "email": "LIMITED TIME OFFER: Grow your business 10x with our SEO service, reply now for a free consultation!!!",
+      "expected_category": "general",
+      "expected_summary": "Unsolicited promotional message with no genuine support request.",
+      "expected_difficulty": "hard",
+      "notes": "Spam-like promotional email that ended up in the support queue - not a real customer request; tests that the classifier doesn't force it into billing/technical/account."
+    }
+  ]
+}
