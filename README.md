@@ -68,7 +68,7 @@ average summary-quality score, and an accuracy-by-difficulty breakdown
 `reports/eval_<version>_<timestamp>.json`.
 
 Note: `MockClient`'s keyword matching is a thin offline stand-in, not a real
-classifier — it won't ace the harder (ambiguous/sarcastic/mixed-language)
+classifier it won't ace the harder (ambiguous/sarcastic/mixed-language)
 cases in the golden dataset, and that's expected. Those cases exist to
 stress a *real* model; a real Groq run is expected to score meaningfully
 higher on them than `MockClient` does.
