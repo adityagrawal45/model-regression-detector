@@ -274,6 +274,10 @@ def main(argv: list[str] | None = None) -> int:
         default=DEFAULT_CONCURRENCY,
         help="Max number of golden-dataset cases to evaluate concurrently (default: 5).",
     )
+    parser.add_argument("--no-history", action="store_true", help="Skip recording this run in the SQLite history DB.")
+    parser.add_argument(
+        "--history-db", default=None, help="Path to the SQLite history DB (default: <out-dir>/history.db)."
+    )
     args = parser.parse_args(argv)
 
     if args.mock or not os.environ.get("GROQ_API_KEY"):
@@ -292,6 +296,15 @@ def main(argv: list[str] | None = None) -> int:
     out_path = out_dir / f"eval_{report.prompt_version}_{timestamp}.json"
     out_path.write_text(report.model_dump_json(indent=2), encoding="utf-8")
     print(f"\nReport written to {out_path}")
+
+    if not args.no_history:
+        # Local import: history_store.py imports EvalReport from this module,
+        # so a module-level import here would be circular.
+        from regression_detector.history_store import record_run
+
+        history_db = Path(args.history_db) if args.history_db else out_dir / "history.db"
+        record_run(report, out_path, db_path=history_db)
+        print(f"Recorded in history DB: {history_db}")
 
     return 0 if report.category_accuracy == 1.0 else 1
 
