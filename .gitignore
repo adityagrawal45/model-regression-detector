@@ -1,5 +1,6 @@
 .env
 reports/*.json
+reports/*.db
 !reports/.gitkeep
 __pycache__/
 *.pyc
