@@ -184,10 +184,36 @@ as `regression.py`. A `--drift-absolute-floor` is also available for a fixed
 folds a "slow drift" line into the Slack alert automatically when drift is
 detected, even on an otherwise-passing run.
 
+## Historical dashboard
+
+Every `eval_runner.py` run also records a lightweight summary row (prompt
+version, model, timestamp, accuracy, latency, token totals, and a link back
+to the full JSON report) to a local SQLite database at `reports/history.db`,
+via [src/regression_detector/history_store.py](src/regression_detector/history_store.py).
+The full `eval_<version>_<timestamp>.json` files stay the source of truth for
+per-case results — SQLite is just a fast, queryable index over run summaries
+instead of a directory glob. Pass `--no-history` to `eval_runner.py` to skip
+recording a run, or `--history-db <path>` to point at a different database.
+
+Render a standalone HTML dashboard from that history — an accuracy-over-time
+chart, a latency-over-time chart, a token-usage-over-time chart, current
+drift status, and a table of recent runs linking back to each run's own eval
+report — via
+[src/regression_detector/dashboard.py](src/regression_detector/dashboard.py):
+
+```bash
+python -m regression_detector.dashboard --history-db reports/history.db --out reports/dashboard.html
+```
+
+Like the HTML diff report, the dashboard is a single self-contained file
+(inline CSS, inline SVG charts, no external assets, no JS) that can be opened
+locally or hosted as a static file. `regression.py` also defaults to reading
+this database (`--history-source db`, the default) for its own trend chart
+and drift check; pass `--history-source json-glob` to fall back to scanning
+`eval_*.json` files directly instead.
+
 ## What's next
 
 - Wiring the eval + regression check into GitHub Actions to run on every PR
   that touches `prompts/` or the classifier code.
-- SQLite storage for historical eval runs + a small dashboard for diffing
-  runs over time (currently reports/ + directory globbing).
 - Docker packaging.
