@@ -22,12 +22,23 @@ users.
   top of the straightforward cases. The dataset file itself is versioned
   (`version` field) separately from prompt versions, so growing or relabeling
   the eval bar is a visible, trackable change.
-- **An eval runner**: runs the classifier over the golden dataset and scores
-  category accuracy + a rough summary-quality heuristic, in
+- **An async, batched eval runner**: runs every golden-dataset case through
+  the classifier concurrently (bounded by `--concurrency`, default 5) via
+  `asyncio`, in
   [src/regression_detector/eval_runner.py](src/regression_detector/eval_runner.py).
+  Each case is scored on four independent dimensions, stored per-case in the
+  report: exact category match (binary), summary relevance (1-5, via an
+  LLM-as-judge in
+  [src/regression_detector/judge.py](src/regression_detector/judge.py)),
+  latency (ms), and token usage (prompt/completion/total).
 - **A regression detector**: diffs two eval reports (e.g. prompt v1 vs v2)
   and flags whether the candidate is a regression against the baseline, in
   [src/regression_detector/regression.py](src/regression_detector/regression.py).
+  Beyond the overall pass-rate delta, it breaks accuracy deltas down
+  per-category and classifies each delta's magnitude as noise, a warning, or
+  critical (default 3% / 8%, both configurable) — so a couple of flipped
+  cases in an otherwise-healthy category doesn't get lost in the aggregate
+  number, and small run-to-run noise doesn't cry wolf.
 
 LLM provider is [Groq](https://groq.com) (OpenAI-compatible API), but the
 classifier and eval runner only depend on the `LLMClient` protocol in
@@ -62,10 +73,14 @@ Without a key (offline / demo mode, uses `MockClient` automatically):
 python -m regression_detector.eval_runner --mock
 ```
 
-This prints a pass/fail table per example, aggregate category accuracy, an
-average summary-quality score, and an accuracy-by-difficulty breakdown
-(`easy`/`medium`/`hard`), then writes a full JSON report to
-`reports/eval_<version>_<timestamp>.json`.
+This prints a pass/fail table per example (category match, heuristic and
+LLM-judge summary scores, latency), aggregate category accuracy, average
+summary scores, average latency, total tokens used, and accuracy breakdowns
+by difficulty (`easy`/`medium`/`hard`) and by category, then writes a full
+JSON report — with all four scoring dimensions stored per case — to
+`reports/eval_<version>_<timestamp>.json`. Pass `--concurrency N` to change
+how many cases run at once (default 5); each case makes two LLM calls (one to
+classify, one for the judge to score the summary), both batched.
 
 Note: `MockClient`'s keyword matching is a thin offline stand-in, not a real
 classifier it won't ace the harder (ambiguous/sarcastic/mixed-language)
@@ -99,24 +114,80 @@ python -m regression_detector.regression \
     --candidate reports/eval_v2_<timestamp>.json
 ```
 
-This prints per-example flips (correct→incorrect and incorrect→correct),
-the aggregate accuracy and summary-score deltas, and a verdict. It exits `0`
-if no regression is detected and `1` if one is — wire it into CI to fail a
-PR automatically. A regression is flagged when:
+This prints per-example flips (correct→incorrect and incorrect→correct), the
+overall pass-rate and summary-score deltas, a per-category accuracy delta
+table, and a verdict. It exits `0` if no regression is detected and `1` if
+one is — wire it into CI to fail a PR automatically. A regression is flagged
+(`is_regression`) when:
 
 - category accuracy drops at all (`--accuracy-drop-threshold`, default `0.0`),
 - avg summary score drops by more than `0.05` (`--summary-score-drop-threshold`),
-- any example that used to be correctly categorized flips to incorrect, or
-- any example starts erroring that didn't before.
+- any example that used to be correctly categorized flips to incorrect,
+- any example starts erroring that didn't before, or
+- the overall or any per-category accuracy delta crosses the warning/critical
+  severity thresholds below.
 
-A full diff report (per-example deltas included) is written to
-`reports/diff_<baseline>_vs_<candidate>_<timestamp>.json`.
+Separately from the pass/fail gate above, every accuracy delta (overall and
+per-category) is classified on a statistical-significance-style severity
+scale, since on a modest golden dataset a couple of flipped cases can be
+noise or a real problem depending on which category they land in:
+
+- **none**: drop is below `--warning-delta-threshold` (default `3%`)
+- **warning**: drop is at or above the warning threshold but below `--critical-delta-threshold` (default `8%`)
+- **critical**: drop is at or above the critical threshold
+
+Both thresholds are tunable per run — a 20-case dataset needs a looser bar
+than a 500-case one. A full diff report (per-example deltas, per-category
+deltas and severities, and both threshold values used, all included) is
+written to `reports/diff_<baseline>_vs_<candidate>_<timestamp>.json`.
+
+## HTML diff report
+
+Every `regression.py` run also writes a self-contained HTML report (inline
+CSS + an inline SVG chart, no external assets) next to the JSON diff report —
+`reports/diff_<baseline>_vs_<candidate>_<timestamp>.html` — built by
+[src/regression_detector/report_html.py](src/regression_detector/report_html.py).
+It has: run metadata (prompt version, model, timestamp) for both runs; a
+scorecard comparing every scoring dimension (category accuracy, both summary
+scores, latency, tokens) candidate vs baseline; a side-by-side table of every
+regressed case (old category/summary vs new); and a trend chart of category
+accuracy over the last N runs, with the drift rolling average overlaid when
+available. Point `--history-dir` at the directory of past `eval_*.json`
+reports to populate the trend chart (defaults to the baseline's directory).
+Pass `--no-html` to skip it, or `--html-out <path>` to control where it goes.
+
+## Slack alerts
+
+Pass `--slack` to `regression.py` to post a Block Kit message to a Slack
+incoming webhook — set `SLACK_WEBHOOK_URL` (or pass `--slack-webhook-url`)
+and, to include a link to the HTML report, `--report-url <public URL>` (the
+local file path is used as a fallback if omitted, which is only useful if
+that path is itself reachable, e.g. a shared CI artifacts URL). The message
+carries a PASS/WARN/FAIL status, the headline numbers ("N regressions
+detected, accuracy dropped from X% to Y%"), any per-category severities, a
+drift line if `detect_drift` flagged one, and the report link. See
+[src/regression_detector/alerts.py](src/regression_detector/alerts.py) — the
+actual HTTP POST is a single injectable function, so `build_slack_message`
+can be tested without ever hitting the network.
+
+## Drift detection
+
+Per-run diffs catch a single bad prompt/model change; they don't catch a
+*slow* decline where each run only drops a point or two — well under the
+per-run warning threshold — but the trend adds up over many runs.
+[src/regression_detector/drift.py](src/regression_detector/drift.py) tracks a
+rolling average of category accuracy across a history of eval runs
+(`--drift-window`, default 7) and compares the current window's average
+against the window before it, using the same warning/critical severity scale
+as `regression.py`. A `--drift-absolute-floor` is also available for a fixed
+"never go below this" bar, independent of trend. `regression.py --slack`
+folds a "slow drift" line into the Slack alert automatically when drift is
+detected, even on an otherwise-passing run.
 
 ## What's next
 
 - Wiring the eval + regression check into GitHub Actions to run on every PR
   that touches `prompts/` or the classifier code.
-- Slack webhook alerts when `regression.py` detects a regression.
 - SQLite storage for historical eval runs + a small dashboard for diffing
-  runs over time.
+  runs over time (currently reports/ + directory globbing).
 - Docker packaging.

@@ -51,10 +51,32 @@ def test_run_eval_end_to_end(tmp_path: Path):
     # MockClient's keyword matching should get all three of these unambiguous examples right.
     assert report.category_accuracy == 1.0
     assert report.accuracy_by_difficulty == {"easy": 1.0, "medium": 1.0}
+    assert report.accuracy_by_category == {"account": 1.0, "billing": 1.0, "technical": 1.0}
+    assert report.avg_latency_ms is not None and report.avg_latency_ms >= 0.0
+    assert report.avg_summary_judge_score is not None
+    assert 1.0 <= report.avg_summary_judge_score <= 5.0
+    assert report.total_tokens is not None and report.total_tokens > 0
     for result in report.results:
         assert result.error is None
         assert 0.0 <= result.summary_score <= 1.0
         assert result.difficulty in {"easy", "medium", "hard"}
+        assert result.summary_judge_score is not None
+        assert 1 <= result.summary_judge_score <= 5
+        assert result.latency_ms is not None and result.latency_ms >= 0.0
+        assert result.total_tokens is not None and result.total_tokens > 0
+
+
+def test_run_eval_batches_with_bounded_concurrency(tmp_path: Path):
+    """concurrency=1 (fully serial) should score identically to the default batched run."""
+    dataset_path = tmp_path / "dataset.json"
+    dataset_path.write_text(json.dumps(FIXTURE_DATASET), encoding="utf-8")
+    prompt_path = Path(__file__).resolve().parents[1] / "prompts" / "classifier_v1.yaml"
+
+    serial_report = run_eval(prompt_path, dataset_path, MockClient(), concurrency=1)
+    batched_report = run_eval(prompt_path, dataset_path, MockClient(), concurrency=10)
+
+    assert serial_report.category_accuracy == batched_report.category_accuracy
+    assert {r.id for r in serial_report.results} == {r.id for r in batched_report.results}
 
 
 def test_run_eval_scoring_math(tmp_path: Path):

@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "regression-detector"
 version = "0.1.0"
-description = "Model regression detection system - Phase 1: classifier, prompt versioning, golden-dataset eval runner"
+description = "Model regression detection system - classifier, prompt versioning, golden dataset, async multi-dimensional eval runner, and regression diffing"
 requires-python = ">=3.11"
 
 [tool.setuptools.packages.find]
