@@ -318,6 +318,19 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help="Optional fixed floor for the rolling average category accuracy; below it is always at least a warning.",
     )
+    parser.add_argument(
+        "--history-source",
+        choices=["db", "json-glob"],
+        default="db",
+        help="Where to load run history from for the trend chart and drift check: the SQLite "
+        "history DB (default) or a legacy glob of eval_*.json files in --history-dir.",
+    )
+    parser.add_argument(
+        "--history-db",
+        default=None,
+        help="Path to the SQLite history DB (default: <history-dir>/history.db). Only used when "
+        "--history-source=db (the default).",
+    )
     parser.add_argument("--html-out", default=None, help="Path to write the HTML diff report to (default: alongside the JSON diff report).")
     parser.add_argument("--no-html", action="store_true", help="Skip generating the HTML diff report.")
     parser.add_argument(
@@ -350,7 +363,16 @@ def main(argv: list[str] | None = None) -> int:
     print(f"\nDiff report written to {out_path}")
 
     history_dir = Path(args.history_dir) if args.history_dir else Path(args.baseline).resolve().parent
-    history = load_eval_history(history_dir) if history_dir.exists() else []
+    if args.history_source == "json-glob":
+        history = load_eval_history(history_dir) if history_dir.exists() else []
+    else:
+        # Local import: history_store.py imports EvalReport from eval_runner.py,
+        # kept out of this module's top-level imports for symmetry with the
+        # same-shaped import in eval_runner.py's main().
+        from regression_detector.history_store import load_history
+
+        history_db = Path(args.history_db) if args.history_db else history_dir / "history.db"
+        history = load_history(history_db)
     drift = detect_drift(
         history,
         window=args.drift_window,
