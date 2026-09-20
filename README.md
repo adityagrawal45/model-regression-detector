@@ -1,4 +1,4 @@
-# Model Regression Detector
+# Model Regression Detector Algo
 
 A CI-style pipeline for catching LLM quality regressions before they reach
 users.
